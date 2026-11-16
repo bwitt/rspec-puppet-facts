@@ -64,25 +64,21 @@ module RspecPuppetFacts
 
     filter = []
     opts[:supported_os].map do |os_sup|
+      operatingsystem = os_sup['operatingsystem']
+      operatingsystem = operatingsystem.downcase if /Windows/i.match?(operatingsystem)
+
       if os_sup['operatingsystemrelease']
         Array(os_sup['operatingsystemrelease']).map do |operatingsystemmajrelease|
           opts[:hardwaremodels].each do |hardwaremodel|
             os_release_filter = "/^#{Regexp.escape(operatingsystemmajrelease.split(' ')[0])}/"
-            case os_sup['operatingsystem']
-            when /BSD/i
-              hardwaremodel = 'amd64'
-            when /Solaris/i
-              hardwaremodel = 'i86pc'
+            case operatingsystem
             when /AIX/i
-              hardwaremodel = '/^IBM,.*/'
               os_release_filter = if operatingsystemmajrelease =~ /\A(\d+)\.(\d+)\Z/
                                     "/^#{$~[1]}#{$~[2]}00-/"
                                   else
                                     "/^#{operatingsystemmajrelease}-/"
                                   end
             when /Windows/i
-              hardwaremodel = 'x86_64'
-              os_sup['operatingsystem'] = os_sup['operatingsystem'].downcase
               operatingsystemmajrelease = operatingsystemmajrelease[/\A(?:Server )?(.+)/i, 1]
 
               # force quoting because windows releases can contain spaces
@@ -93,17 +89,17 @@ module RspecPuppetFacts
             end
 
             filter << {
-              'os.name' => os_sup['operatingsystem'],
+              'os.name' => operatingsystem,
               'os.release.full' => os_release_filter,
-              'os.hardware' => hardwaremodel,
+              'os.hardware' => RspecPuppetFacts.os_hardwaremodel(operatingsystem, hardwaremodel),
             }
           end
         end
       else
         opts[:hardwaremodels].each do |hardwaremodel|
           filter << {
-            'os.name' => os_sup['operatingsystem'],
-            'os.hardware' => hardwaremodel,
+            'os.name' => operatingsystem,
+            'os.hardware' => RspecPuppetFacts.os_hardwaremodel(operatingsystem, hardwaremodel),
           }
         end
       end
@@ -158,6 +154,24 @@ module RspecPuppetFacts
     end
 
     os_facts_hash
+  end
+
+  # Map the requested hardware model to the one FacterDB uses for the OS
+  # @return [String]
+  # @api private
+  def self.os_hardwaremodel(operatingsystem, hardwaremodel)
+    case operatingsystem
+    when /BSD/i
+      'amd64'
+    when /Solaris/i
+      'i86pc'
+    when /AIX/i
+      '/^IBM,.*/'
+    when /Windows/i
+      'x86_64'
+    else
+      hardwaremodel
+    end
   end
 
   # @api private

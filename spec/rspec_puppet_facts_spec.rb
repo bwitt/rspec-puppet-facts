@@ -589,6 +589,38 @@ describe RspecPuppetFacts do
       end
     end
 
+    context 'When specifying operating systems with a different hardware model without releases' do
+      subject do
+        on_supported_os(
+          {
+            supported_os: supported_os,
+            facterversion: '4.7',
+          },
+        )
+      end
+
+      let(:supported_os) do
+        [
+          { 'operatingsystem' => 'FreeBSD' },
+          { 'operatingsystem' => 'Windows' },
+        ]
+      end
+
+      it 'returns supported OS' do
+        expect(subject.keys).to contain_exactly(a_string_matching(/\Afreebsd-\d+-amd64\z/), a_string_matching(/\Awindows-.+-x86_64\z/))
+      end
+    end
+
+    context 'When specifying Windows' do
+      let(:supported_os) do
+        [{ 'operatingsystem' => 'Windows', 'operatingsystemrelease' => ['2022'] }]
+      end
+
+      it 'does not modify supported_os' do
+        expect { on_supported_os(supported_os: supported_os, facterversion: '4.7') }.not_to(change { supported_os.map(&:dup) })
+      end
+    end
+
     context 'When the operatingsystemrelease contains parens' do
       subject do
         on_supported_os(
