@@ -13,6 +13,10 @@ describe RspecPuppetFacts do
     it {
       expect(described_class.stringify_keys({ os: { family: 'RedHat' } })).to eq({ 'os' => { 'family' => 'RedHat' } })
     }
+
+    it 'does not rely on RspecPuppetFacts being included globally' do
+      expect(described_class.method(:stringify_keys).owner).to eq(described_class.singleton_class)
+    end
   end
 
   describe '.facter_version_for_puppet_version' do

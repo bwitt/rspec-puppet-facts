@@ -161,7 +161,7 @@ module RspecPuppetFacts
   end
 
   # @api private
-  def stringify_keys(hash)
+  def self.stringify_keys(hash)
     hash.to_h { |k, v| [k.to_s, v.is_a?(Hash) ? stringify_keys(v) : v] }
   end
 
