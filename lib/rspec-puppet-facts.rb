@@ -119,7 +119,8 @@ module RspecPuppetFacts
     # cycle through and downgrade Facter versions per platform type until we find matching Facter data.
     facterversion_key = RSpec.configuration.facterdb_string_keys ? 'facterversion' : :facterversion
     filter.each do |filter_spec|
-      versions = FacterDB.get_facts(filter_spec, symbolize_keys: !RSpec.configuration.facterdb_string_keys).to_h do |facts|
+      # FacterDB's cache returns the same objects (ignoring symbolize_keys), but they're modified below
+      versions = FacterDB.get_facts(filter_spec, false, symbolize_keys: !RSpec.configuration.facterdb_string_keys).to_h do |facts|
         [Gem::Version.new(facts[facterversion_key]), facts]
       end
 

@@ -614,7 +614,7 @@ describe RspecPuppetFacts do
           'os.hardware' => 'x86_64',
         }
 
-        expect(FacterDB).to receive(:get_facts).with(filter, symbolize_keys: true).once
+        expect(FacterDB).to receive(:get_facts).with(filter, false, symbolize_keys: true).once
         subject
       end
 
@@ -742,9 +742,9 @@ describe RspecPuppetFacts do
       before do
         allow(FacterDB).to receive(:get_facts).and_call_original
         allow(FacterDB).to receive(:get_facts).with(
-          { 'os.name' => 'CentOS', 'os.release.full' => '/^9/', 'os.hardware' => 'x86_64' }, symbolize_keys: true
-        ).and_wrap_original do |m, *args|
-          m.call(*args).reject { |facts| facts[:facterversion].start_with?('4.6.') }
+          { 'os.name' => 'CentOS', 'os.release.full' => '/^9/', 'os.hardware' => 'x86_64' }, false, symbolize_keys: true
+        ).and_wrap_original do |m, *args, **kwargs|
+          m.call(*args, **kwargs).reject { |facts| facts[:facterversion].start_with?('4.6.') }
         end
       end
 
@@ -826,6 +826,28 @@ describe RspecPuppetFacts do
     it 'accepts sym fact key and stores fact key as sym' do
       add_custom_fact :root_home, ->(_os, _facts) { '/root' }
       expect(subject['redhat-9-x86_64'][:root_home]).to eq '/root'
+    end
+
+    context 'with a single operating system' do
+      subject do
+        on_supported_os(
+          {
+            supported_os: [
+              {
+                'operatingsystem' => 'RedHat',
+                'operatingsystemrelease' => %w[9],
+              },
+            ],
+          },
+        )
+      end
+
+      it 'does not leak custom facts into later calls' do
+        add_custom_fact :leaky, 'value'
+        expect(subject['redhat-9-x86_64'][:leaky]).to eq 'value'
+        described_class.reset
+        expect(on_supported_os(supported_os: [{ 'operatingsystem' => 'RedHat', 'operatingsystemrelease' => %w[9] }])['redhat-9-x86_64']).not_to have_key(:leaky)
+      end
     end
   end
 
