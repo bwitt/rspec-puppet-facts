@@ -126,10 +126,10 @@ module RspecPuppetFacts
       version, facts = versions.select { |v, _f| strict_requirement =~ v }.max_by { |v, _f| v }
 
       unless version
+        raise ArgumentError, "No facts were found in the FacterDB for Facter v#{facterversion} on #{filter_spec}, aborting" if RspecPuppetFacts.spec_facts_strict?
+
         version, facts = versions.select { |v, _f| loose_requirement =~ v }.max_by { |v, _f| v } if loose_requirement
         next unless version
-
-        raise ArgumentError, "No facts were found in the FacterDB for Facter v#{facterversion} on #{filter_spec}, aborting" if RspecPuppetFacts.spec_facts_strict?
 
         RspecPuppetFacts.warning "No facts were found in the FacterDB for Facter v#{facterversion} on #{filter_spec}, using v#{version} instead"
       end

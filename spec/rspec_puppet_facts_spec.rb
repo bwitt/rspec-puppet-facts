@@ -558,6 +558,16 @@ describe RspecPuppetFacts do
         expect(described_class).to receive(:warning).with(/No facts were found in the FacterDB/)
         subject
       end
+
+      context 'With SPEC_FACTS_STRICT set to `yes`' do
+        before do
+          allow(described_class).to receive(:spec_facts_strict?).and_return(true)
+        end
+
+        it 'errors' do
+          expect { subject }.to raise_error ArgumentError, /No facts were found in the FacterDB.*Debian.*aborting/
+        end
+      end
     end
 
     context 'When specifying rolling release operating system' do
